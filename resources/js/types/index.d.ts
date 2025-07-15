@@ -30,9 +30,51 @@ export interface User {
     name: string;
     email: string;
     avatar?: string;
+    role: string;
     email_verified_at: string | null;
     created_at: string;
     updated_at: string;
 }
+
+export interface Category {
+    id: number;
+    name: string;
+    materials: Material[];
+}
+
+export interface Request {
+    id: number;
+    user: User;
+    status: 'pendente' | 'aprovado' | 'rejeitado' | 'devolvido';
+    requestItems: RequestItem[];
+    requested_at: Date;
+    approved_at?: Date | null;
+    returned_at?: Date | null;
+    isOverdue: boolean;
+
+}
+export interface RequestItem {
+    id: number;
+    request: Request;
+    material: Material;
+    quantity: number;
+    requested_days: number;
+    due_date: Date; // or Date, if you're working with actual Date objects
+    isOverdue: boolean;
+    returned: boolean;
+}
+export interface Material {
+    id: number;
+    name: string;
+    description: string;
+    quantity: number;
+    max_days_per_request: number;
+    category: Category;
+    requestItems: RequestItem[];
+    availableQuantity: number;
+    isAvailable: boolean;
+    currentlyBorrowedQuantity: number;
+}
+
 
 export type BreadcrumbItemType = BreadcrumbItem;
