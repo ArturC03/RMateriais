@@ -23,6 +23,8 @@ class RequestItem extends Model
         'returned' => 'boolean',
     ];
 
+    protected $appends = ['is_borrowed'];
+
     public function material(): BelongsTo {
         return $this->belongsTo(Material::class);
     }
@@ -37,6 +39,18 @@ class RequestItem extends Model
 
     public function isReturned(): bool {
         return $this->returned;
+    }
+
+    public function putInCartOf(User $user) {
+        $cart = $user->cart();
+
+        return $this->update([
+            'request_id' => $cart->id
+        ]);
+    }
+
+    public function GetIsBorrowedAttribute(): bool {
+        return !$this->isReturned() && optional($this->request)->status !== 'rascunho';
     }
 
 }

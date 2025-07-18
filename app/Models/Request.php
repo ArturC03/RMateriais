@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Request extends Model
 {
+
     use HasFactory;
     protected $fillable = [
         'user_id',
@@ -46,4 +47,12 @@ class Request extends Model
     public function isRejected(): bool {
         return $this->status === 'recusado';
     }
+
+    public static function createDraftForUser(User $user): self {
+        return self::create([
+            'user_id' => $user->id,
+            'status' => 'rascunho',
+        ]);
+    }
+
 }

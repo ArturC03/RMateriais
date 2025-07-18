@@ -46,7 +46,7 @@ export interface Request {
     id: number;
     user: User;
     status: 'pendente' | 'aprovado' | 'rejeitado' | 'devolvido';
-    requestItems: RequestItem[];
+    request_items?: RequestItem[];
     requested_at: Date;
     approved_at?: Date | null;
     returned_at?: Date | null;
@@ -55,8 +55,8 @@ export interface Request {
 }
 export interface RequestItem {
     id: number;
-    request: Request;
-    material: Material;
+    request?: Request;
+    material?: Material;
     quantity: number;
     requested_days: number;
     due_date: Date; // or Date, if you're working with actual Date objects
@@ -69,12 +69,11 @@ export interface Material {
     description: string;
     quantity: number;
     max_days_per_request: number;
-    category: Category;
-    requestItems: RequestItem[];
-    availableQuantity: number;
-    isAvailable: boolean;
-    currentlyBorrowedQuantity: number;
+    category?: Category;
+    requestItems?: RequestItem[];
+    available_quantity: number;
+    is_available: boolean;
+    currently_borrowed_quantity: number;
 }
-
 
 export type BreadcrumbItemType = BreadcrumbItem;

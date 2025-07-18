@@ -10,11 +10,18 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Material extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         "name",
         "description",
         "quantity",
         "max_days_per_request"
+    ];
+
+    protected $appends = [
+        'available_quantity',
+        'is_available',
+        'currently_borrowed_quantity'
     ];
 
     public function category(): BelongsTo {
@@ -28,24 +35,21 @@ class Material extends Model
     /*
      * Returns the material that is available (not requested)
      */
-    public function availableQuantity(): int {
-        return $this->quantity - $this->currentlyBorrowedQuantity();
+    public function getAvailableQuantityAttribute(): int {
+        return $this->quantity - $this->currently_borrowed_quantity;
     }
 
     /*
      * If the item can be requested it returns true
      */
-    public function isAvailable(): bool {
-        return $this->availableQuantity() > 0;
+    public function getIsAvailableAttribute(): bool {
+        return $this->available_quantity > 0;
     }
 
     /*
      * Returns the quantity of the material that is borrowed
      */
-    public function currentlyBorrowedQuantity(): int {
-        return $this->requestItems()
-            ->where('returned', false)
-            ->sum('quantity');
+    public function getCurrentlyBorrowedQuantityAttribute(): int {
+        return $this->requestItems->where('is_borrowed', true)->sum('quantity');
     }
-
 }

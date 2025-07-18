@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('requests', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users');
-            $table->enum('status', ['pendente', 'aprovado', 'recusado', 'devolvido'])->default('pendente');
-            $table->timestamp('requested_at')->useCurrent();
+            $table->enum('status', ['rascunho','pendente', 'aprovado', 'recusado', 'devolvido'])->default('rascunho');
+            $table->timestamp('requested_at')->nullable();
             $table->timestamp('approved_at')->nullable();
             $table->timestamp('returned_at')->nullable();
             $table->timestamps();

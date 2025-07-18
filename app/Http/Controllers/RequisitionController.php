@@ -9,6 +9,7 @@ use Illuminate\View\View;
 use Inertia\Inertia;
 use Inertia\Response;
 
+
 class RequisitionController extends Controller
 {
     public function index(): Response
@@ -22,9 +23,9 @@ class RequisitionController extends Controller
                 'max_days_per_request' => $material->max_days_per_request,
                 'category' => $material->category,
                 'requestItems' => $material->requestItems,
-                'availableQuantity' => $material->availableQuantity(),
-                'isAvailable' => $material->isAvailable(),
-                'currentlyBorrowedQuantity' => $material->currentlyBorrowedQuantity(),
+                'available_quantity' => $material->available_quantity,
+                'is_available' => $material->is_available,
+                'currently_borrowed_quantity' => $material->currently_borrowed_quantity,
             ];
         });
 
@@ -34,4 +35,20 @@ class RequisitionController extends Controller
         ]);
     }
 
+    public function cart(): Response {
+        $user = auth()->user();
+
+        if (!$user)
+            throw new \Exception("User must be logged in");
+
+
+        $cart = $user->cart()->load('requestItems.material.category');
+
+        if (!$cart)
+            throw new \Exception("Error getting cart");
+
+        return Inertia::render('requisitions/Cart', [
+            'cart' => $cart,
+        ]);
+    }
 }

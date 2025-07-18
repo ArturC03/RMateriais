@@ -59,4 +59,14 @@ class User extends Authenticatable
         return strtolower($this->role === 'student');
     }
 
+    public function cart() {
+        $draftRequest = $this->requests()->where('status', 'rascunho')->first();
+
+        if ($draftRequest) {
+            return $draftRequest;
+        }
+
+        return \App\Models\Request::createDraftForUser($this);
+    }
+
 }
