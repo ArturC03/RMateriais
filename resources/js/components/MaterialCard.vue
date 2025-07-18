@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Box, CheckCircle, Clock, XCircle } from 'lucide-vue-next';
+import { Box, CheckCircle, Clock, LoaderCircle, XCircle } from 'lucide-vue-next';
 import { Badge } from '@/components/ui/badge';
-import { router } from '@inertiajs/vue3';
+import { router, useForm } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { toast } from 'vue-sonner';
+import {
+    Dialog,
+    DialogContent,
+} from '@/components/ui/dialog';
 import {
   NumberField,
   NumberFieldContent,
@@ -15,10 +19,35 @@ import {
   NumberFieldDecrement
 } from '@/components/ui/number-field';
 import type { Material, User } from '@/types';
+import InputError from '@/components/InputError.vue';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import TextLink from '@/components/TextLink.vue';
+import AuthLayout from '@/layouts/AuthLayout.vue';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const props = defineProps<{
     material: Material
 }>();
+
+const modalLoginForm = useForm({
+    email: '',
+    password: '',
+    remember: false,
+});
+
+const showLoginModal = ref(false);
+
+const modalLoginSubmit = () => {
+    modalLoginForm.post(route('login'), {
+        onSuccess: () => {
+            showLoginModal.value = false;
+            modalLoginForm.reset('password');
+        },
+        onFinish: () => modalLoginForm.reset('password'),
+        preserveScroll: true,
+    });
+};
 
 const getStatusInfo = (material: Material) => {
     if (material.is_available && material.available_quantity > 0) {
@@ -62,6 +91,7 @@ function handleAddToCart() {
   // Try to get user from inject (provided by parent), fallback to event
   const user : User = usePage().props.auth?.user;
   if (!user) {
+      showLoginModal.value = true;
     toast.error('Precisas estar autenticado(a) para adicionar ao carrinho.');
     return;
   }
@@ -93,6 +123,57 @@ function handleAddToCart() {
 </script>
 
 <template>
+    <Dialog v-model:open="showLoginModal">
+        <DialogContent class="max-h-[100%] max-w-md w-full p-0 overflow-hidden">
+            <AuthLayout title="Entra na tua conta" description="Entra com o teu email e palavra-passe para requisitar materiais">
+                <form @submit.prevent="modalLoginSubmit" class="flex flex-col gap-6">
+                    <div class="grid gap-6">
+                        <div class="grid gap-2">
+                            <Label for="modal-login-email">Email</Label>
+                            <Input
+                                id="modal-login-email"
+                                type="email"
+                                required
+                                autofocus
+                                v-model="modalLoginForm.email"
+                                placeholder="email@exemplo.com"
+                            />
+                            <InputError :message="modalLoginForm.errors.email" />
+                        </div>
+                        <div class="grid gap-2">
+                            <div class="flex items-center justify-between">
+                                <Label for="modal-login-password">Palavra-passe</Label>
+                                <TextLink :href="route('password.request')" class="text-sm">Esqueceste-te da palavra-passe?</TextLink>
+                            </div>
+                            <Input
+                                id="modal-login-password"
+                                type="password"
+                                required
+                                v-model="modalLoginForm.password"
+                                placeholder="Palavra-passe"
+                            />
+                            <InputError :message="modalLoginForm.errors.password" />
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <Label for="modal-login-remember" class="flex items-center space-x-3">
+                                <Checkbox id="modal-login-remember" v-model="modalLoginForm.remember" />
+                                <span>Lembrar-me</span>
+                            </Label>
+                        </div>
+                        <Button type="submit" class="mt-4 w-full" :disabled="modalLoginForm.processing">
+                            <LoaderCircle v-if="modalLoginForm.processing" class="h-4 w-4 animate-spin" />
+                            Entrar
+                        </Button>
+                    </div>
+                    <div class="text-center text-sm text-muted-foreground">
+                        Não tens conta?
+                        <TextLink :href="route('register')">Registar</TextLink>
+                    </div>
+                </form>
+            </AuthLayout>
+        </DialogContent>
+    </Dialog>
+
   <Card class="flex flex-col items-stretch rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-zinc-900 p-0 overflow-hidden">
     <!-- Image/Icon Placeholder -->
     <div class="flex items-center justify-center bg-gray-100 dark:bg-zinc-800 h-24 w-full">

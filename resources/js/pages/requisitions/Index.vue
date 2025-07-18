@@ -7,12 +7,6 @@ import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-    Dialog,
-    DialogContent,
-    DialogTitle,
-    DialogDescription,
-} from '@/components/ui/dialog';
-import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
@@ -24,13 +18,6 @@ import { Search, Filter } from 'lucide-vue-next';
 import MaterialCard from '@/components/MaterialCard.vue';
 import type { Category, Material, User } from '@/types';
 import AppLayout from '@/layouts/app/AppHeaderLayout.vue';
-import InputError from '@/components/InputError.vue';
-import TextLink from '@/components/TextLink.vue';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { useForm } from '@inertiajs/vue3';
-import { LoaderCircle } from 'lucide-vue-next';
-import AuthLayout from '@/layouts/AuthLayout.vue';
 import { toast } from 'vue-sonner';
 
 const props = defineProps<{
@@ -63,29 +50,10 @@ const filteredMaterials = computed(() => {
 
 const page = usePage();
 const user = computed(() => (page.props as any)?.auth?.user as User | undefined);
-const showLoginModal = ref(false);
-
-const modalLoginForm = useForm({
-    email: '',
-    password: '',
-    remember: false,
-});
-
-const modalLoginSubmit = () => {
-    modalLoginForm.post(route('login'), {
-        onSuccess: () => {
-            showLoginModal.value = false;
-            modalLoginForm.reset('password');
-        },
-        onFinish: () => modalLoginForm.reset('password'),
-        preserveScroll: true,
-    });
-};
 
 function handleAddToCart(material: Material, quantity: number) {
     if (!user.value) {
-        showLoginModal.value = true;
-        toast.error('Você precisa estar autenticado para adicionar ao carrinho.');
+        toast.error('Precisas estar autenticado para adicionar ao carrinho.');
         return;
     }
     if (!material) {
@@ -115,56 +83,6 @@ function handleAddToCart(material: Material, quantity: number) {
 <template>
     <Head title="Requisitar Materiais" />
 <AppLayout>
-    <Dialog v-model:open="showLoginModal">
-        <DialogContent class="max-h-[100%] max-w-md w-full p-0 overflow-hidden">
-            <AuthLayout title="Entra na tua conta" description="Entra com o teu email e palavra-passe para requisitar materiais">
-                <form @submit.prevent="modalLoginSubmit" class="flex flex-col gap-6">
-                    <div class="grid gap-6">
-                        <div class="grid gap-2">
-                            <Label for="modal-login-email">Email</Label>
-                            <Input
-                                id="modal-login-email"
-                                type="email"
-                                required
-                                autofocus
-                                v-model="modalLoginForm.email"
-                                placeholder="email@exemplo.com"
-                            />
-                            <InputError :message="modalLoginForm.errors.email" />
-                        </div>
-                        <div class="grid gap-2">
-                            <div class="flex items-center justify-between">
-                                <Label for="modal-login-password">Palavra-passe</Label>
-                                <TextLink :href="route('password.request')" class="text-sm">Esqueceste-te da palavra-passe?</TextLink>
-                            </div>
-                            <Input
-                                id="modal-login-password"
-                                type="password"
-                                required
-                                v-model="modalLoginForm.password"
-                                placeholder="Palavra-passe"
-                            />
-                            <InputError :message="modalLoginForm.errors.password" />
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <Label for="modal-login-remember" class="flex items-center space-x-3">
-                                <Checkbox id="modal-login-remember" v-model="modalLoginForm.remember" />
-                                <span>Lembrar-me</span>
-                            </Label>
-                        </div>
-                        <Button type="submit" class="mt-4 w-full" :disabled="modalLoginForm.processing">
-                            <LoaderCircle v-if="modalLoginForm.processing" class="h-4 w-4 animate-spin" />
-                            Entrar
-                        </Button>
-                    </div>
-                    <div class="text-center text-sm text-muted-foreground">
-                        Não tens conta?
-                        <TextLink :href="route('register')">Registar</TextLink>
-                    </div>
-                </form>
-            </AuthLayout>
-        </DialogContent>
-    </Dialog>
     <div class="container mx-auto px-4 py-6">
         <!-- Header -->
         <div class="mb-8">
