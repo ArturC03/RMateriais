@@ -14,6 +14,7 @@ import type { BreadcrumbItem, NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
 import { MessageSquareMore, Newspaper, ShoppingCart, LayoutGrid, Menu, BellRingIcon, BellIcon } from 'lucide-vue-next';
 import { computed } from 'vue';
+import CartPopover from '@/components/ui/CartPopover.vue';
 
 interface Props {
     breadcrumbs?: BreadcrumbItem[];
@@ -25,6 +26,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const page = usePage();
 const auth = computed(() => page.props.auth);
+const showCartPopover = computed(() => page.url === '/catalogo');
 
 const isCurrentRoute = computed(() => (url: string) => page.url === url);
 
@@ -55,11 +57,6 @@ const rightNavItems: NavItem[] = [
         title: 'Notificações',
         href: '/carrinho',
         icon: BellIcon,
-    },
-    {
-        title: 'Carrinho',
-        href: '/carrinho',
-        icon: ShoppingCart,
     },
 ];
 </script>
@@ -106,6 +103,8 @@ const rightNavItems: NavItem[] = [
                                         <component v-if="item.icon" :is="item.icon" class="h-5 w-5" />
                                         <span>{{ item.title }}</span>
                                     </a>
+                                    <!-- CartPopover in mobile menu -->
+                                    <CartPopover v-if="showCartPopover" />
                                 </div>
                             </div>
                         </SheetContent>
@@ -158,6 +157,8 @@ const rightNavItems: NavItem[] = [
                                     </Tooltip>
                                 </TooltipProvider>
                             </template>
+                            <!-- Add CartPopover here -->
+                            <CartPopover v-if="showCartPopover" />
                         </div>
                     </div>
 

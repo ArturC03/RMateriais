@@ -29,9 +29,16 @@ class RequisitionController extends Controller
             ];
         });
 
+        $cart = null;
+        $user = auth()->user();
+        if ($user) {
+            $cart = $user->cart()->load('requestItems.material.category');
+        }
+
         return Inertia::render('requisitions/Index', [
             'materials' => $materials,
             'categories' => Category::all(),
+            'cart' => $cart,
         ]);
     }
 

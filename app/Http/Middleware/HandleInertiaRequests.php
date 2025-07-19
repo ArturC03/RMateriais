@@ -39,13 +39,20 @@ class HandleInertiaRequests extends Middleware
     {
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
 
+        $user = $request->user();
+        $cart = null;
+        if ($user) {
+            $cart = $user->cart()->load('requestItems.material.category');
+        }
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
-                'user' => $request->user(),
+                'user' => $user,
             ],
+            'cart' => $cart,
             'ziggy' => [
                 ...(new Ziggy)->toArray(),
                 'location' => $request->url(),
