@@ -12,7 +12,7 @@ import UserMenuContent from '@/components/UserMenuContent.vue';
 import { getInitials } from '@/composables/useInitials';
 import type { BreadcrumbItem, NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
-import {MessageSquareMore, Newspaper, ShoppingCart, LayoutGrid, Menu} from 'lucide-vue-next';
+import { MessageSquareMore, Newspaper, ShoppingCart, LayoutGrid, Menu, BellRingIcon, BellIcon } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 interface Props {
@@ -50,6 +50,11 @@ const rightNavItems: NavItem[] = [
         title: 'Mensagens',
         href: '', // TODO: Add route
         icon: MessageSquareMore,
+    },
+    {
+        title: 'Notificações',
+        href: '/carrinho',
+        icon: BellIcon,
     },
     {
         title: 'Carrinho',

@@ -24,6 +24,9 @@ Route::post('materiais/adicionar-ao-carrinho', [MaterialsController::class, 'add
 Route::post('materiais/remover-do-carrinho', [MaterialsController::class, 'removeFromCart'])
     ->middleware(['auth', 'verified'])->name('materials.cart.remove');
 
+Route::post('requisicao/fazer-pedido', [RequisitionController::class, 'placeOrder'])
+    ->middleware(['auth', 'verified'])->name('materials.cart.place_order');
+
 Route::get('/catalogo', [RequisitionController::class, 'index'])->name('requisitions.index');
 Route::get('/carrinho', [RequisitionController::class, 'cart'])->name('requisitions.cart');
 

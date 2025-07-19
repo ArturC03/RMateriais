@@ -232,14 +232,6 @@ function handleAddToCart() {
           </NumberFieldContent>
         </NumberField>
       </div>
-      <Button
-        v-if="!material.is_available || material.available_quantity === 0"
-        variant="outline"
-        disabled
-        class="w-full mt-2"
-      >
-        {{ material.currently_borrowed_quantity > 0 ? 'Emprestado' : 'Indisponível' }}
-      </Button>
     </CardFooter>
   </Card>
 </template>

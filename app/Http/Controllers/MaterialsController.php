@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use App\Models\Material;
 use Illuminate\Support\Facades\Validator;
 
 class MaterialsController extends Controller
 {
-    public function addToCart(Request $request) {
+    public function addToCart(Request $request): RedirectResponse  {
         try {
             $user = auth()->user();
             if (!$user) {
@@ -59,7 +60,7 @@ class MaterialsController extends Controller
         }
     }
 
-    public function removeFromCart(Request $request)
+    public function removeFromCart(Request $request): RedirectResponse
     {
         try {
             $user = auth()->user();

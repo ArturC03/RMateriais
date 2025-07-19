@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { usePage , router} from '@inertiajs/vue3';
 import { Head } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { toast } from 'vue-sonner';
@@ -20,18 +20,37 @@ import {
 import { LoaderCircle } from 'lucide-vue-next';
 
 const page = usePage();
+
 const props = computed(() => page.props as {
     auth?: Auth;
     cart?: Request;
 });
 
+const user = props.value.auth?.user;
+
 const removingItemId = ref<number | null>(null);
-// Use a local ref for items to allow immediate UI updates
-const items = ref<RequestItem[]>([...(props.value.cart?.request_items ?? [])]);
+const finalizingRequest = ref<boolean>(false);
+
+// Make items reactive to page props changes
+const items = computed(() => props.value.cart?.request_items ?? []);
 const totalItems = computed(() => items.value.length);
 const isEmpty = computed(() => totalItems.value === 0);
 
+// Local items for immediate UI updates during operations
+const localItems = ref<RequestItem[]>([...items.value]);
+
+// Watch for changes in the cart data and update local items
+watch(items, (newItems) => {
+  localItems.value = [...newItems];
+}, { immediate: true });
+
 function removeItem(item: RequestItem) {
+
+    if (!user) {
+        toast.error("Utilizador precisa ter sessão iniciada para remover um item do carrinho.");
+        return;
+    }
+
   removingItemId.value = item.id;
 
   // Call the backend to remove the item from the cart
@@ -39,10 +58,10 @@ function removeItem(item: RequestItem) {
     material_id: item.material?.id,
   }, {
     onSuccess: () => {
-      const idx = items.value.findIndex(i => i.id === item.id);
+      const idx = localItems.value.findIndex(i => i.id === item.id);
 
       if (idx !== -1)
-        items.value.splice(idx, 1);
+        localItems.value.splice(idx, 1);
 
       toast.success('Item removido do carrinho!');
       removingItemId.value = null;
@@ -60,9 +79,32 @@ function removeItem(item: RequestItem) {
 }
 
 function finalizeRequest() {
-  // TODO: Replace with actual API call
-  toast.success('Pedido finalizado (placeholder)');
+    finalizingRequest.value = true;
+
+    if (!user) {
+        toast.error("Utilizador precisa de ter sessão iniciada para fazer um pedido");
+        return;
+    }
+
+    // Make Request
+    router.post('requisicao/fazer-pedido', {}, {
+        onSuccess: () => {
+            toast.success('Pedido realizado!');
+            finalizingRequest.value = false;
+            // Clear local items immediately to show empty state
+            localItems.value = [];
+        },
+        onError: (errors: any) => {
+            if (errors.error) {
+                toast.error(errors.error);
+            } else {
+                finalizingRequest.value = false;
+            }
+        },
+        preserveScroll: true,
+    });
 }
+
 
 </script>
 
@@ -97,7 +139,7 @@ function finalizeRequest() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            <TableRow v-for="item in items" :key="item.id">
+            <TableRow v-for="item in localItems" :key="item.id">
               <TableCell class="px-4 py-3">
                 <div class="font-medium text-foreground">{{ item.material?.name || '-' }}</div>
                 <div class="text-xs text-muted-foreground">{{ item.material?.description || '' }}</div>
@@ -123,15 +165,16 @@ function finalizeRequest() {
           <TableFooter>
             <TableRow>
               <TableCell colspan="2" class="px-4 py-3 font-semibold text-right">Total de itens:</TableCell>
-              <TableCell class="px-4 py-3 text-center font-semibold">{{ totalItems }}</TableCell>
+              <TableCell class="px-4 py-3 text-center font-semibold">{{ localItems.length }}</TableCell>
               <TableCell colspan="2"></TableCell>
             </TableRow>
           </TableFooter>
         </Table>
         <div class="flex flex-col md:flex-row md:items-center md:justify-end gap-4 mt-8">
-          <Button size="lg" class="w-full md:w-auto" @click="finalizeRequest">
-            Finalizar Pedido
-          </Button>
+            <Button size="lg" class="w-full md:w-auto" @click="finalizeRequest" :disabled="finalizingRequest">
+                <LoaderCircle v-if="finalizingRequest" class="h-4 w-4 animate-spin mr-2" />
+                {{ finalizingRequest ? 'A Finalizar...' : 'Finalizar Pedido' }}
+            </Button>
         </div>
       </div>
     </div>

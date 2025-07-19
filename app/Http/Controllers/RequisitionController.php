@@ -4,11 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Material;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Inertia\Inertia;
 use Inertia\Response;
-
 
 class RequisitionController extends Controller
 {
@@ -50,5 +50,24 @@ class RequisitionController extends Controller
         return Inertia::render('requisitions/Cart', [
             'cart' => $cart,
         ]);
+    }
+
+    public function placeOrder(Request $request): RedirectResponse {
+        try {
+            $user = auth()->user();
+
+            if(!$user)
+                return back()->withErrors(['error' => 'Não autenticado']);
+
+            if($user->cart()->isEmpty())
+                return back()->withErrors(['error' => 'O carrinho está vazio']);
+
+            $user->cart()->makeOrder();
+
+            return back()->with(['success' => 'Pedido realizado com sucesso']);
+
+        } catch (\Exception $exception) {
+            return back()->withErrors(['error' => $exception->getMessage()]);
+        }
     }
 }

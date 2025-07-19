@@ -6,6 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
+/**
+ * @property \Illuminate\Support\Carbon $due_date
+ * @property Material $material
+ * @property \App\Models\Request $request
+ * @property int id
+ * @property bool returned
+ */
 class RequestItem extends Model
 {
     use HasFactory;
@@ -41,7 +48,8 @@ class RequestItem extends Model
         return $this->returned;
     }
 
-    public function putInCartOf(User $user) {
+    public function putInCartOf(User $user): bool
+    {
         $cart = $user->cart();
 
         return $this->update([
@@ -51,6 +59,11 @@ class RequestItem extends Model
 
     public function GetIsBorrowedAttribute(): bool {
         return !$this->isReturned() && optional($this->request)->status !== 'rascunho';
+    }
+
+    public function refreshDueDate(): void {
+        $this->due_date = now()->addDays($this->material->max_days_per_request);
+        $this->save();
     }
 
 }

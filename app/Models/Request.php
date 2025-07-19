@@ -7,14 +7,22 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
+/**
+ * @property int $id
+ * @property mixed $status
+ * @property \Illuminate\Support\Carbon $requested_at
+ * @property \Illuminate\Support\Carbon $returned_at
+ * @property \Illuminate\Support\Carbon $approved_at
+ */
 class Request extends Model
 {
 
     use HasFactory;
     protected $fillable = [
         'user_id',
-        'status',        // e.g., 'pendente', 'aprovado', 'rejeitado', 'devolvido'
+        'status',        // e.g., 'pendente', 'aprovado', 'rejeitado', 'devolvido', 'rascunho'
         'requested_at',  // when the request was made 'approved_at',   // when the professor approved it
+        'approved_at',
         'returned_at',   // when the student returned the materials
     ];
 
@@ -55,4 +63,35 @@ class Request extends Model
         ]);
     }
 
+    public function isEmpty(): bool {
+        return $this->requestItems()->count() === 0;
+    }
+
+    public function refreshDueDates(): void {
+        foreach ($this->requestItems() as $requestItem) {
+            $requestItem->refreshDueDate();
+            $requestItem->save();
+        }
+    }
+
+    public function refreshReturnDates(): void {
+        foreach ($this->requestItems() as $requestItem) {
+            $requestItem->refreshReturnDate();
+            $requestItem->save();
+        }
+    }
+
+
+    /**
+     * @throws \Exception
+     */
+    public function makeOrder(): void {
+        if ($this->status !== 'rascunho')
+            throw new \Exception('Tentativa de criar pedido de uma requisição que não é um rascunho');
+
+        $this->refreshDueDates();
+        $this->requested_at = now();
+        $this->status = 'pendente';
+        $this->save();
+    }
 }
