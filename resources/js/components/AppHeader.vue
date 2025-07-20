@@ -12,7 +12,7 @@ import UserMenuContent from '@/components/UserMenuContent.vue';
 import { getInitials } from '@/composables/useInitials';
 import type { BreadcrumbItem, NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
-import { MessageSquareMore, Newspaper, ShoppingCart, LayoutGrid, Menu, BellRingIcon, BellIcon } from 'lucide-vue-next';
+import { MessageSquareMore, Newspaper, ShoppingCart, LayoutGrid, Menu, BellIcon } from 'lucide-vue-next';
 import { computed } from 'vue';
 import CartPopover from '@/components/ui/CartPopover.vue';
 
@@ -47,7 +47,25 @@ const mainNavItems: NavItem[] = [
     },
 ];
 
-const rightNavItems: NavItem[] = [
+const rightNavItemsMobile: NavItem[] = [
+    {
+        title: 'Mensagens',
+        href: '', // TODO: Add route
+        icon: MessageSquareMore,
+    },
+    {
+        title: 'Notificações',
+        href: '/carrinho',
+        icon: BellIcon,
+    },
+    {
+        title: 'Carrinho',
+        href: '/carrinho',
+        icon: ShoppingCart,
+    },
+];
+
+const rightNavItemsDesktop: NavItem[] = [
     {
         title: 'Mensagens',
         href: '', // TODO: Add route
@@ -60,6 +78,7 @@ const rightNavItems: NavItem[] = [
     },
 ];
 </script>
+
 
 <template>
     <div>
@@ -93,7 +112,7 @@ const rightNavItems: NavItem[] = [
                                 </nav>
                                 <div class="flex flex-col space-y-4">
                                     <a
-                                        v-for="item in rightNavItems"
+                                        v-for="item in rightNavItemsMobile"
                                         :key="item.title"
                                         :href="item.href"
                                         target="_blank"
@@ -103,8 +122,6 @@ const rightNavItems: NavItem[] = [
                                         <component v-if="item.icon" :is="item.icon" class="h-5 w-5" />
                                         <span>{{ item.title }}</span>
                                     </a>
-                                    <!-- CartPopover in mobile menu -->
-                                    <CartPopover v-if="showCartPopover" />
                                 </div>
                             </div>
                         </SheetContent>
@@ -140,7 +157,7 @@ const rightNavItems: NavItem[] = [
                     <div class="relative flex items-center space-x-1">
 
                         <div class="hidden space-x-1 lg:flex">
-                            <template v-for="item in rightNavItems" :key="item.title">
+                            <template v-for="item in rightNavItemsDesktop" :key="item.title">
                                 <TooltipProvider :delay-duration="0">
                                     <Tooltip>
                                         <TooltipTrigger>
@@ -157,7 +174,6 @@ const rightNavItems: NavItem[] = [
                                     </Tooltip>
                                 </TooltipProvider>
                             </template>
-                            <!-- Add CartPopover here -->
                             <CartPopover v-if="showCartPopover" />
                         </div>
                     </div>

@@ -3,6 +3,7 @@
 use App\Models\Material;
 use App\Models\RequestItem;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;

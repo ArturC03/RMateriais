@@ -85,13 +85,43 @@ class Request extends Model
     /**
      * @throws \Exception
      */
-    public function makeOrder(): void {
-        if ($this->status !== 'rascunho')
-            throw new \Exception('Tentativa de criar pedido de uma requisição que não é um rascunho');
+    public function makeOrder(): void
+    {
+        try {
+            if ($this->status !== 'rascunho')
+                throw new \Exception('Tentativa de criar pedido de uma requisição que não é um rascunho');
 
-        $this->refreshDueDates();
-        $this->requested_at = now();
-        $this->status = 'pendente';
-        $this->save();
+            $this->refreshDueDates();
+            $this->requested_at = now();
+            $this->status = 'pendente';
+            $this->save();
+        } catch (\Exception $exception) {
+            throw new \Exception($exception->getMessage());
+        }
+
+        // Send email notification to professors
+        $this->sendOrderNotification();
+    }
+
+    /**
+     * Send email notification to professors about the new order
+     */
+    private function sendOrderNotification(): void
+    {
+        // Get all professors
+        $professors = \App\Models\User::where('role', 'professor')->get();
+
+        if($professors->isEmpty()) {
+            // Send to fallback email if no professors exist
+            \Illuminate\Support\Facades\Mail::to("arturvicentecruz@proton.me")
+                ->send(new \App\Mail\OrderNotification($this));
+            return;
+        }
+
+        // Send email to each professor
+        foreach ($professors as $professor) {
+            \Illuminate\Support\Facades\Mail::to($professor->email)
+                ->send(new \App\Mail\OrderNotification($this));
+        }
     }
 }
