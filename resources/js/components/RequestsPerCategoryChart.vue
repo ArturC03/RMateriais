@@ -1,243 +1,239 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed, nextTick, onUnmounted } from 'vue';
-import { router } from '@inertiajs/vue3';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { BarChartIcon, Layers } from 'lucide-vue-next';
+import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { router } from '@inertiajs/vue3';
+import { BarChartIcon, CalendarIcon, FilterIcon } from 'lucide-vue-next';
+import { nextTick, onMounted, ref } from 'vue';
 
-const props = defineProps<{ initialData: { labels: string[]; data: number[] }; chartKey: string }>();
-const chartData = ref(props.initialData);
-const chartRef = ref();
-const chartInstance = ref<any>(null);
-const categories = ref<{ id: number; name: string }[]>([]);
+const props = defineProps<{
+    initialData: { labels: string[]; data: number[] };
+    chartKey: string;
+    categories?: Array<{ id: number; name: string }>;
+}>();
+
+const chartRef = ref<HTMLCanvasElement>();
+let chartInstance: any = null;
+const isLoading = ref(false);
+const showFilters = ref(false);
+
+// Simple reactive filter state
+const startDate = ref('');
+const endDate = ref('');
 const selectedCategories = ref<number[]>([]);
-const popoverOpen = ref(false);
-const tempSelectedCategories = ref<number[]>([]);
+const availableCategories = ref<Array<{ id: number; name: string }>>([]);
 
-// Helper: map category name to ID and vice versa
-const categoryNameToId = () => {
-  const map: Record<string, number> = {};
-  categories.value.forEach(cat => { map[cat.name] = cat.id; });
-  return map;
-};
-const categoryIdToName = () => {
-  const map: Record<number, string> = {};
-  categories.value.forEach(cat => { map[cat.id] = cat.name; });
-  return map;
-};
-
-function destroyChart() {
-  if (chartInstance.value) {
-    try {
-      chartInstance.value.destroy();
-    } catch (error) {
-      console.error('Error destroying chart:', error);
+async function loadCategories() {
+    if (props.categories) {
+        availableCategories.value = props.categories;
+        return;
     }
-    chartInstance.value = null;
-  }
+
+    try {
+        const response = await fetch('/dashboard/categories');
+        if (response.ok) {
+            availableCategories.value = await response.json();
+        }
+    } catch (error) {
+        console.error('Failed to load categories:', error);
+    }
 }
 
 function createChart() {
-  const Chart = (window as any).Chart;
-  if (!Chart) {
-    console.error('Chart.js not available');
-    return;
-  }
-  
-  if (!chartRef.value) {
-    console.error('Canvas element not found');
-    return;
-  }
+    if (!chartRef.value) return;
 
-  try {
-    // Always destroy existing chart first
-    destroyChart();
-    
-    const canvas = chartRef.value;
-    const ctx = canvas.getContext('2d');
-    
-    if (!ctx) {
-      console.error('Could not get canvas context');
-      return;
+    const Chart = (window as any).Chart;
+    if (!Chart) return;
+
+    // Destroy existing chart
+    if (chartInstance) {
+        chartInstance.destroy();
+        chartInstance = null;
     }
 
-    const styles = getComputedStyle(document.documentElement);
-    const chart1Color = styles.getPropertyValue('--color-chart-1').trim() || styles.getPropertyValue('--color-primary').trim();
-    const chart2Color = styles.getPropertyValue('--color-chart-2').trim() || '#a78bfa';
-    const chart3Color = styles.getPropertyValue('--color-chart-3').trim() || '#fbbf24';
-    const chart4Color = styles.getPropertyValue('--color-chart-4').trim() || '#f87171';
-    const borderColor = styles.getPropertyValue('--color-border').trim() || '#e5e7eb';
-    
-    chartInstance.value = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: chartData.value.labels,
-        datasets: [{
-          label: 'Materiais',
-          data: chartData.value.data,
-          backgroundColor: [chart1Color, chart2Color, chart3Color, chart4Color],
-        }],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { grid: { color: borderColor } },
-          y: { grid: { color: borderColor } }
-        }
-      },
+    const ctx = chartRef.value.getContext('2d');
+    chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: props.initialData.labels,
+            datasets: [
+                {
+                    label: 'Requisições',
+                    data: props.initialData.data,
+                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
+                    borderColor: ['#2563eb', '#059669', '#d97706', '#dc2626', '#7c3aed'],
+                    borderWidth: 1,
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 },
+                },
+            },
+        },
     });
-    
-    console.log('Chart created successfully');
-  } catch (error) {
-    console.error('Error creating chart:', error);
-  }
 }
 
-function openPopover() {
-  tempSelectedCategories.value = [...selectedCategories.value];
-  popoverOpen.value = true;
+function applyFilters() {
+    isLoading.value = true;
+    showFilters.value = false;
+
+    const params = new URLSearchParams();
+    params.append('chart', props.chartKey);
+
+    if (startDate.value) params.append('start_date', startDate.value);
+    if (endDate.value) params.append('end_date', endDate.value);
+
+    selectedCategories.value.forEach((id) => {
+        params.append('category_ids[]', id.toString());
+    });
+
+    // Use Inertia to reload with filters
+    router.visit(`/dashboard?${params.toString()}`, {
+        method: 'get',
+        preserveState: false,
+        preserveScroll: false,
+        onFinish: () => {
+            isLoading.value = false;
+        },
+    });
 }
-function closePopover() {
-  popoverOpen.value = false;
+
+function clearFilters() {
+    startDate.value = '';
+    endDate.value = '';
+    selectedCategories.value = [];
+    applyFilters();
 }
-function applyCategoryFilter() {
-  selectedCategories.value = [...tempSelectedCategories.value];
-  popoverOpen.value = false;
-  console.log('Applying filter with categories:', selectedCategories.value);
-  // Send selected categories to backend with Inertia POST
-  router.post(
-    '/dashboard',
-    { category_ids: selectedCategories.value },
-    { 
-      preserveScroll: true, 
-      preserveState: true,
-      onSuccess: () => {
-        console.log('Filter applied successfully');
-      },
-      onError: (errors) => {
-        console.error('Filter error:', errors);
-      }
+
+function toggleCategory(categoryId: number) {
+    const index = selectedCategories.value.indexOf(categoryId);
+    if (index > -1) {
+        selectedCategories.value.splice(index, 1);
+    } else {
+        selectedCategories.value.push(categoryId);
     }
-  );
-}
-function cancelCategoryFilter() {
-  closePopover();
 }
 
-function isCategoryChecked(id: number) {
-  return tempSelectedCategories.value.includes(id);
+// Simple computed helpers
+function hasActiveFilters() {
+    return startDate.value || endDate.value || selectedCategories.value.length > 0;
 }
-function setCategoryChecked(id: number, checked: boolean) {
-  if (checked) {
-    if (!tempSelectedCategories.value.includes(id)) tempSelectedCategories.value.push(id);
-  } else {
-    const idx = tempSelectedCategories.value.indexOf(id);
-    if (idx !== -1) tempSelectedCategories.value.splice(idx, 1);
-  }
-  console.log('tempSelectedCategories now:', tempSelectedCategories.value);
+
+function getActiveFiltersCount() {
+    let count = 0;
+    if (startDate.value) count++;
+    if (endDate.value) count++;
+    if (selectedCategories.value.length > 0) count += selectedCategories.value.length;
+    return count;
 }
-const categoryCheckedProxy = computed(() => {
-  const proxy: Record<number, boolean> = {};
-  categories.value.forEach(cat => {
-    Object.defineProperty(proxy, cat.id, {
-      get: () => isCategoryChecked(cat.id),
-      set: (val: boolean) => setCategoryChecked(cat.id, val),
-      enumerable: true,
-      configurable: true,
-    });
-  });
-  return proxy;
-});
 
 onMounted(async () => {
-  console.log('Component mounted, initial data:', props.initialData);
-  
-  // Wait for next tick to ensure DOM is ready
-  await nextTick();
-  
-  // Fetch categories for filter
-  try {
-    const res = await fetch('/dashboard/categories');
-    if (res.ok) {
-      categories.value = await res.json();
-      console.log('Categories loaded:', categories.value);
-      // On first load, select all categories that are present in the chart
-      const nameToId: Record<string, number> = {};
-      categories.value.forEach(cat => { nameToId[cat.name] = cat.id; });
-      selectedCategories.value = props.initialData.labels.map(label => nameToId[label]).filter(Boolean);
-      console.log('Selected categories on load:', selectedCategories.value);
-    }
-  } catch (e) {
-    console.error('Error loading categories:', e);
-  }
-  
-  // Create chart after everything is set up
-  setTimeout(() => {
-    console.log('Canvas element:', chartRef.value);
-    if (chartRef.value) {
-      console.log('Canvas dimensions:', chartRef.value.width, 'x', chartRef.value.height);
-      createChart();
-    } else {
-      console.error('Canvas not found after timeout');
-    }
-  }, 500);
+    await loadCategories();
+    await nextTick();
+    createChart();
 });
-
-// Cleanup on unmount
-onUnmounted(() => {
-  destroyChart();
-});
-
-// Watch for data changes and recreate chart
-watch(() => props.initialData, (newData) => {
-  console.log('Chart data updated:', newData);
-  chartData.value = { ...newData }; // Create a new object to ensure reactivity
-  
-  // Recreate chart with new data
-  createChart();
-}, { deep: true });
 </script>
 
 <template>
-  <Card class="p-6 flex flex-col">
-    <div class="flex items-center gap-2 mb-4">
-      <BarChartIcon/>
-      <span class="font-semibold">Materiais por categoria</span>
-      <Popover v-model:open="popoverOpen">
-        <PopoverTrigger as-child>
-          <Button variant="ghost" size="icon" class="ml-2" aria-label="Filtrar por categoria" @click="openPopover">
-            <Layers class="w-5 h-5 opacity-70" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent class="w-64">
-          <div class="flex flex-col gap-2">
-            <label class="text-xs font-medium mb-1">Categorias</label>
-            <div class="max-h-40 overflow-y-auto mb-2">
-              <div v-for="cat in categories" :key="cat.id" class="flex items-center gap-2 py-1">
-                <Checkbox
-                  v-model:checked="categoryCheckedProxy[cat.id]"
-                  id="cat-{{cat.id}}"
-                />
-                <label :for="'cat-' + cat.id" class="text-sm cursor-pointer">{{ cat.name }}</label>
-              </div>
+    <Card class="p-6">
+        <!-- Chart Header -->
+        <div class="mb-4 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <BarChartIcon class="h-5 w-5" />
+                <h3 class="font-semibold">Requisições por Categoria</h3>
             </div>
-            <div class="flex gap-2 mt-2">
-              <Button size="sm" variant="default" class="flex-1" @click="applyCategoryFilter">Aplicar</Button>
-              <Button size="sm" variant="outline" class="flex-1" @click="cancelCategoryFilter">Cancelar</Button>
-            </div>
-          </div>
-        </PopoverContent>
-      </Popover>
-      <span class="ml-2 text-xs text-muted-foreground">
-        {{ selectedCategories.length === 0 ? 'Todas' : selectedCategories.length + ' selecionadas' }}
-      </span>
-    </div>
-    <div class="relative w-full h-48">
-      <canvas ref="chartRef" class="w-full h-full" width="400" height="200"></canvas>
-    </div>
-  </Card>
+
+            <!-- Filter Button -->
+            <Popover v-model:open="showFilters">
+                <PopoverTrigger as-child>
+                    <Button variant="outline" size="sm">
+                        <FilterIcon class="mr-2 h-4 w-4" />
+                        Filtros
+                        <span v-if="getActiveFiltersCount() > 0" class="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
+                            {{ getActiveFiltersCount() }}
+                        </span>
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent class="w-80" align="end">
+                    <div class="space-y-4">
+                        <h4 class="font-medium">Filtros do Gráfico</h4>
+
+                        <!-- Date Filters -->
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium">Período</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-xs text-gray-600">De</label>
+                                    <Input type="date" v-model="startDate" />
+                                </div>
+                                <div>
+                                    <label class="text-xs text-gray-600">Até</label>
+                                    <Input type="date" v-model="endDate" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Category Filters -->
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium">Categorias</label>
+                            <div class="max-h-32 space-y-2 overflow-y-auto">
+                                <div v-for="category in availableCategories" :key="category.id" class="flex items-center space-x-2">
+                                    <Checkbox
+                                        :id="`cat-${category.id}`"
+                                        :checked="selectedCategories.includes(category.id)"
+                                        @click="toggleCategory(category.id)"
+                                    />
+                                    <label :for="`cat-${category.id}`" class="cursor-pointer text-sm">
+                                        {{ category.name }}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex gap-2 pt-2">
+                            <Button @click="applyFilters" :disabled="isLoading" size="sm" class="flex-1">
+                                {{ isLoading ? 'Aplicando...' : 'Aplicar' }}
+                            </Button>
+                            <Button v-if="hasActiveFilters()" @click="clearFilters" variant="outline" size="sm"> Limpar </Button>
+                        </div>
+                    </div>
+                </PopoverContent>
+            </Popover>
+        </div>
+
+        <!-- Active Filters Display -->
+        <div v-if="hasActiveFilters()" class="mb-4 flex flex-wrap gap-2">
+            <span class="text-xs text-gray-600">Filtros ativos:</span>
+
+            <span v-if="startDate || endDate" class="rounded bg-blue-100 px-2 py-1 text-xs text-blue-800">
+                <CalendarIcon class="mr-1 inline h-3 w-3" />
+                <span v-if="startDate && endDate">
+                    {{ new Date(startDate).toLocaleDateString() }} - {{ new Date(endDate).toLocaleDateString() }}
+                </span>
+                <span v-else-if="startDate">Desde {{ new Date(startDate).toLocaleDateString() }}</span>
+                <span v-else>Até {{ new Date(endDate).toLocaleDateString() }}</span>
+            </span>
+
+            <span v-for="categoryId in selectedCategories" :key="categoryId" class="rounded bg-green-100 px-2 py-1 text-xs text-green-800">
+                {{ availableCategories.find((c) => c.id === categoryId)?.name }}
+            </span>
+        </div>
+
+        <!-- Chart -->
+        <div class="relative h-64">
+            <canvas ref="chartRef" class="h-full w-full"></canvas>
+        </div>
+    </Card>
 </template>

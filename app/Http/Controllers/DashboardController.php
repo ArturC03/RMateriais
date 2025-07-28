@@ -25,6 +25,9 @@ class DashboardController extends Controller
         }
         $selectedCategoryIds = array_filter($selectedCategoryIds); // Remove empty
 
+        // Get all categories for the filter dropdown
+        $allCategories = Category::select('id', 'name')->orderBy('name')->get();
+
         $requestsQuery = MaterialRequest::with(['user', 'requestItems.material.category'])
             ->orderByDesc('requested_at');
         if ($startDate) $requestsQuery->where('requested_at', '>=', $startDate);
@@ -146,7 +149,9 @@ class DashboardController extends Controller
             'filters' => [
                 'start_date' => $startDate ? $startDate->toDateString() : null,
                 'end_date' => $endDate ? $endDate->toDateString() : null,
+                'category_ids' => $selectedCategoryIds,
             ],
+            'categories' => $allCategories,
         ]);
     }
 }
