@@ -63,7 +63,6 @@ function handleAddToCart(material: Material, quantity: number) {
     router.post('/materiais/adicionar-ao-carrinho', {
         material_id: material.id,
         quantity: quantity,
-        days: material.max_days_per_request
     }, {
         onSuccess: () => {
             toast.success('Material adicionado ao carrinho com sucesso!');

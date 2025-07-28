@@ -44,24 +44,25 @@ export interface Category {
 
 export interface Request {
     id: number;
+    user_id: number;
+    status: 'rascunho' | 'pendente' | 'reservado' | 'devolvido' | 'cancelado';
+    requested_at: string;
+    approved_at?: string;
+    returned_at?: string;
     user: User;
-    status: 'pendente' | 'aprovado' | 'rejeitado' | 'devolvido';
-    request_items?: RequestItem[];
-    requested_at: Date;
-    approved_at?: Date | null;
-    returned_at?: Date | null;
-    isOverdue: boolean;
-
+    requestItems: RequestItem[];
 }
 export interface RequestItem {
     id: number;
-    request?: Request;
-    material?: Material;
+    request_id: number;
+    material_id: number;
     quantity: number;
-    requested_days: number;
-    due_date: Date; // or Date, if you're working with actual Date objects
-    isOverdue: boolean;
+    due_date: string;
+    reserved_at?: string;
     returned: boolean;
+    material: Material;
+    request: Request;
+    is_borrowed: boolean;
 }
 export interface Material {
     id: number;

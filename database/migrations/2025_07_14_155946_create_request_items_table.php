@@ -16,8 +16,8 @@ return new class extends Migration
             $table->foreignId('request_id')->constrained('requests');
             $table->foreignId('material_id')->constrained('materials');
             $table->unsignedInteger('quantity');
-            $table->unsignedInteger('requested_days');
             $table->date('due_date')->nullable();
+            $table->timestamp('reserved_at')->nullable();
             $table->boolean('returned')->default(false);
             $table->timestamps();
         });

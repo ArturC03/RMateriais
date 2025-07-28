@@ -134,7 +134,7 @@ function finalizeRequest() {
               <TableHead class="px-4 py-3">Material</TableHead>
               <TableHead class="px-4 py-3">Categoria</TableHead>
               <TableHead class="px-4 py-3 text-center">Quantidade</TableHead>
-              <TableHead class="px-4 py-3 text-center">Dias</TableHead>
+              <TableHead class="px-4 py-3 text-center">Duração</TableHead>
               <TableHead class="px-4 py-3 text-center">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -146,7 +146,7 @@ function finalizeRequest() {
               </TableCell>
               <TableCell class="px-4 py-3">{{ item.material?.category?.name || '-' }}</TableCell>
               <TableCell class="px-4 py-3 text-center">{{ item.quantity }}</TableCell>
-              <TableCell class="px-4 py-3 text-center">{{ item.requested_days }}</TableCell>
+              <TableCell class="px-4 py-3 text-center">3</TableCell>
               <TableCell class="px-4 py-3 text-center">
                 <Button
                   variant="outline"

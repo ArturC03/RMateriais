@@ -22,8 +22,7 @@ class RequestItemFactory extends Factory
             'request_id' => Request::factory(),
             'material_id' => Material::factory(),
             'quantity' => $this->faker->numberBetween(1, 2),
-            'requested_days' => $this->faker->numberBetween(1, 7),
-            'due_date' => now()->addDays($this->faker->numberBetween(1, 7)),
+            'due_date' => now()->addDays(3), // Fixed 3-day duration
             'returned' => $this->faker->boolean(),
         ];
     }

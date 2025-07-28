@@ -103,7 +103,6 @@ function handleAddToCart() {
   router.post('/materiais/adicionar-ao-carrinho', {
     material_id: props.material.id,
     quantity: q,
-    days: props.material.max_days_per_request
   }, {
     onSuccess: () => {
       toast.success('Material adicionado ao carrinho com sucesso!');
@@ -199,8 +198,8 @@ function handleAddToCart() {
           {{ material.available_quantity }} de {{ material.quantity }}
         </div>
         <div>
-          <span class="font-medium text-foreground">Tempo:</span>
-          {{ material.max_days_per_request }}d
+          <span class="font-medium text-foreground">Duração:</span>
+          3 dias
         </div>
       </div>
       <!-- Status Badge -->

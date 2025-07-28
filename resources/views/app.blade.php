@@ -46,5 +46,6 @@
     </head>
     <body class="font-sans antialiased">
         @inertia
+        <script src="/vendor/bladewind/js/chart.js"></script>
     </body>
 </html>

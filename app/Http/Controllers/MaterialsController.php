@@ -21,7 +21,6 @@ class MaterialsController extends Controller
             $validator = Validator::make($request->all(), [
                 'material_id' => 'required|exists:materials,id',
                 'quantity' => 'required|integer|min:1|max:' . $material->available_quantity,
-                'days' => ['required', 'integer', 'min:1', 'max:' . $material->max_days_per_request],
             ]);
 
             if ($validator->fails()) {
@@ -43,13 +42,12 @@ class MaterialsController extends Controller
                 return back()->with('success', 'Material adicionado ao carrinho!');
             }
 
-            // Calculate due date
-            $dueDate = now()->addDays($request->days);
+            // Fixed 3-day duration as per client requirements
+            $dueDate = now()->addDays(3);
 
             $requestItem = $cart->requestItems()->create([
                 'material_id' => $request->material_id,
                 'quantity' => $request->quantity,
-                'requested_days' => $request->days,
                 'due_date' => $dueDate,
                 'returned' => false,
             ]);

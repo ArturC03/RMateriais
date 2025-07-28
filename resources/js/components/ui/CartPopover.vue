@@ -111,7 +111,7 @@ const isEmpty = computed(() => localItems.value.length === 0);
                                     <li v-for="item in localItems" :key="item.id" class="flex items-center justify-between py-2">
                                         <div>
                                             <div class="font-medium">{{ item.material?.name || '-' }}</div>
-                                            <div class="text-xs text-muted-foreground">Qtd: {{ item.quantity }} | Dias: {{ item.requested_days }}</div>
+                                            <div class="text-xs text-muted-foreground">Qtd: {{ item.quantity }} | Duração: 3 dias</div>
                                         </div>
                                         <Button
                                             variant="outline"
